@@ -1,0 +1,10 @@
+ways to initialization.
+1.string s = string("xxx");
+typically initialized way.
+when going out of the scope, it will be deleted automatically.
+2.string * s = new string("xxx");
+bad way.new string return string pointer, and need to delete it after using it.
+3.string s = "xxx";
+same effect as the #1, but need the convert constructor and non-explicit.
+4.string s("xxx");
+same effect as the #1, but need the constructor with the self-instance argument(ie, A(const& A a)).
