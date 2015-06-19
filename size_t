@@ -1,0 +1,12 @@
+1.what is the size_t:
+Unsigned integral type
+Alias of one of the fundamental unsigned integer types.
+It is a type able to represent the size of any object in bytes: size_t is the type returned by the sizeof operator and is widely used in the standard library to represent sizes and counts.
+
+2.never compare the size_t with int vlaue.
+ie:int len = -1; if(string.length() > len){ somecodes}
+
+3.why size_t matter?
+If u use int instead of size_t, it's not enough to cover the range of the address in memory. For example: in some platform, the sizeof(pointer) is larger the size(int).
+
+
