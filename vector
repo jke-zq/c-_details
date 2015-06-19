@@ -1,0 +1,6 @@
+1.vector.clear()
+  It will remove the every element and call the element.deconstruct();
+  But, it set the size = 0, not size = default capacity, U can use vector<T>.swap(myVector) to force reallocation.
+  Anyway, if u dont want to remove the elements from the vector instead of destorying theme, u can emplace their pointers.
+2.move
+  You can use move() to clear() and reset the size = default capacity.
