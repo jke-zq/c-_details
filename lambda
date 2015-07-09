@@ -1,0 +1,17 @@
+1.express the 'type' of a lambda expression:
+No, you cannot put it into decltype because
+
+A lambda-expression shall not appear in an unevaluated operand
+You can do the following though
+
+auto n = [](int l, int r) { return l > r; };
+std::set<int, decltype(n)> s(n);
+But that is really ugly. Note that each lambda expression creates a new unique type. If afterwards you do the following somewhere else, t has a different type than s
+
+auto n = [](int l, int r) { return l > r; };
+std::set<int, decltype(n)> t(n);
+You can use std::function here, but note that this will incur a tiny bit of runtime cost because it needs an indirect call to the lambda function object call operator. It's probably negligible here, but may be significant if you want to pass function objects this way to std::sort for example.
+
+std::set<int, function<bool(int, int)>> s([](int l, int r) { return l > r; });
+
+URL:http://stackoverflow.com/questions/3867276/can-the-type-of-a-lambda-expression-be-expressed
