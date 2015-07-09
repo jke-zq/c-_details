@@ -1,0 +1,114 @@
+1.calling a function from vector:
+answer:
+The problem is here:
+
+vectoroffunctions.push_back(&function);
+ps:function-->
+SomeClass::addThingy(void (*function)())
+{
+    vectoroffunctions.push_back(&function);
+}
+
+You're adding address of the local variable. The local variable gets destroyed once you return from the function. The address which the vector stores points to a destroyed object which is why you get "access violation" error at runtime.
+
+To fix this, do this:
+First change this
+
+std::vector<void (**)()> vectoroffunctions;
+to this:
+
+std::vector<void (*)()> _functions; //vector of function-pointer-type
+                                    //I changed the name also!
+which is practically same as:
+
+std::vector<void()> _functions; //vector of function-type
+Now do this:
+
+_functions.push_back(function); //add copy! 
+To make it more flexible, you could use template along with std::function as:
+
+---codes--begin---
+#include "iostream"
+#include "vector"
+#include "functional"
+#include "typeinfo"
+
+using namespace std;
+
+class A
+{
+    public:
+         template<typename Function>
+         void add(Function &&  fn){
+               _functions.push_back(fn);
+         }
+         void invokeAll(){
+              for(auto && fn : _functions){
+                     fn();
+              }
+         }
+   private:
+        vector<function<void()>> _functions;
+};
+
+void myfunction(){
+    cout << "gooooooo function"<< endl;
+}
+
+struct myfunctor{
+    void operator ()() { cout << "goooooo functor" << endl;}
+};
+
+int main(void){
+
+     A a;
+     a.add(myfunction);
+     auto af = myfunctor();
+     cout << typeid(af).name() << endl;
+     a.add(myfunctor());
+     a.invokeAll();
+}
+---codes--end---
+
+---codes--begin--
+#include "iostream"
+#include "vector"
+#include "functional"
+#include "typeinfo"
+
+using namespace std;
+
+class A
+{
+    public:
+         template<typename Function>
+         void add(Function *  fn){
+               _functions.push_back(fn);
+         }
+         void invokeAll(){
+              for(auto * fn : _functions){
+                     fn();
+              }
+         }
+   private:
+        vector<void(*)()> _functions;
+};
+
+void myfunction(){
+    cout << "gooooooo function"<< endl;
+}
+
+struct myfunctor{
+    void operator ()() { cout << "goooooo functor" << endl;}
+};
+
+int main(void){
+
+     A a;
+     a.add(myfunction);
+     auto af = myfunctor();
+     cout << typeid(af).name() << endl;//print:9functor
+     //a.add((void(*)())myfunctor()); //error:cant cast the 9functor to void(*)()
+     a.invokeAll();
+}
+---codes--end-----
