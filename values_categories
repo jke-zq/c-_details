@@ -1,0 +1,74 @@
+1.rvalue, lvalue, prvalue, xvalue, glvalue – what are those?\
+from:https://progmar.wordpress.com/2012/10/08/rvalue-lvalue-prvalue-xvalue-glvalue-what-are-those/
+Previous standard C++03 divided expressions into lvalues and rvalues, new standard C++11 adds three more categories: xvalue, glvalue and prvalue. What are those and why we need them all?
+
+Lets start with lvalues and rvalues.
+
+The common definition for lvalue is a non-const object that may be put on the left hand side of assignment. It can be an expression or function.
+
+rvalue on the other hand is an expression that cannot be placed on the left hand side of assignment, it provides only value and cannot be assigned to.
+
+For example:
+
+int lvalue;
+lvalue = 1;         // 1*
+(lvalue + 10) = 1;  // 2* - error
+
+char arr[15];
+*(arr + 3) = 'a' ; // 3*
+
+int& lvalueRetFunc(int& v) { return v; }
+int rvalueRetFunc(int v) { return v; }
+lvalueRetFunc(lvalue) = 10; // 4*
+rvalueRetFunc(lvalue) = 10; // 5* - error
+1* – here we have proper assignment to lvalue
+2* – here we have an expression (lvalue + 10) that denotes rvalue which cannot be assigned, in VS C++ 2010 this code will produce following error “error C2106: ‘=’ : left operand must be l-value”.
+3* – example of expression that yields lvalue
+4* – here we have a function returning lvalue which can be assigned
+5* – here function returns rvalue which cannot be assigned and results in the same error like in 2*
+
+From those examples it is easy to see that lvalue can be used where rvalue is required, but not the other way around, rvalue cannot be used in place of lvalue with the exception when c++11 new construct – rvalue reference is used.
+
+Fundamental property of lvalue is that it has a location. This location can be used in assignment expressions, you can use lvalue to take its address.
+
+lvalues are also said to be persistent, rvalues on the other hand are temporary, or ephemeral and are available only until end of full expression, but if rvalue it assigned to const reference or pointer then its lifetime will be prolonged.
+
+lvalues not always can be modified, for example when they are const variables or array types.
+
+Now lets introduce xvalue, glvalue and prvalue. With C++11 comes new language feature called rvalue references. It allows to steal internals of rvalues and use them in constructing new objects that can be later on used as lvalues. This was actually possible in C++03 but was largely complicated. Those three new expression categories were introduced to properly describe this new language feature.
+
+Xvalue (eXpiring value) is the most important new concept, it is tightly connected to new move semantics. To shortly describe move semantics, lets see an example:
+
+In C++03 you would initialize class object with string as follows:
+
+class MyData {
+std::string s;
+public:
+  MyData(std::string ss)
+   :  s(ss) // (2*) here creates another allocation and copy
+  {}
+};
+
+MyData md("mydata"); // (1*) creates one temporary which requires at least one allocation
+The problem is that it introduces temporary rvalues that allocate memory and also do some other operations. With C++11 comes possibility to actually “steal” inner contents from such temporary in (2*) and eliminate not needed allocations/operations:
+
+class MyData {
+std::string s;
+public:
+  MyData(std::string ss) : s(std::move(ss)) {} // here no allocations are created, inner guts of temporary ss are used to initialize s variable
+};
+
+MyData md("mydata"); // here creates temporary string object
+Xvalue in the second example is the std::move(ss) experssion, it returns rvalue reference which is an indication to std::string class that we want to steal inner contents from this temporary and use it in s variable. What std::move really do is to turn named variable into unnamed reference, this is an indication to compiler that we really know what we are doing, and we want s variable to be constructed from ss using move semantics. So the new name for such expression was needed, since move semantics in this example is explicit – without std::move we are back in C++03 world.
+
+After that ss in MyData() constructor is actually empty, standard guarantees that such objects are in a “valid but unspecified state”, that means you can assign new values to it, but current value is not defined.
+
+So – since C++11 rvalue got new semantic which is being an rvalue reference – this means that besides its old semantic it can also behave as xvalue described above.
+
+Now to those two last names:
+– when you see prvalue (“pure” rvalues) – this indicated plain old rvalues from C++03. Those are not xvalues.
+– glvalue (“generalized” lvalue) is just a grouping for lvalues and xvalues.
+
+[refs]
+http://www.cprogramming.com/c++11/rvalue-references-and-move-semantics-in-c++11.html
+http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3055.pdf
